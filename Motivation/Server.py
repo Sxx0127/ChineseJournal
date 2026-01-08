@@ -43,45 +43,29 @@ if __name__ == '__main__':
     parse.add_argument('--dataset', type=str, default='CIFAR-10')
     parse.add_argument('--quan', type=str, default="PQ")
     parse.add_argument('--bit', type=int, default=8)
-    parse.add_argument('--comp', type=str, default="quan")
+    parse.add_argument('--comp', type=str, default="topk")
     parse.add_argument('--fit', type=int, default=1)
-    args = vars(parse.parse_args())
-    if args['dataset'] not in ['CIFAR-10', "FEMNIST", "CIFAR-100"]:
-        print("error dataset definition")
-        exit(-1)
-    if args['iid'] not in ['IID', "NIID"]:
-        print("error iid definition")
-        exit(-1)
-    if args['quan'] not in ["PQ", "QSGD"]:
-        print('error quan definition')
-        exit(-1)
-    if args['bit'] not in [6, 8, 10, 32]:
-        print('error bit definition')
-        exit(-1)
-
+    args = parse.parse_args()
+    
     tmp_model = m.Net()
-    model = m.Net()  # torch.load("net_params.pkl")
+    model = m.Net() 
     test_loader = torch.utils.data.DataLoader(
         datasets.CIFAR10('../../CIFAR-10', train=False, download=True,
                        transform=transform_test),
         batch_size=batch_size, shuffle=False
     )
-    interval = 5
-    global_round = 100
+    global_round = 10
     d = 0
     for p in model.state_dict():
-        # for p in model.parameters():
+    # for p in model.parameters():
         if p.find("num_batches_tracked") != -1:
             continue
         d += model.state_dict()[p].numel()
         # d += p.numel()
     print(f'{d:,} training parameters.')
 
-    # 确定客户端的数量，从而进行数据的划分
     clients = Clients.Client(client_num, args)
-
     communication_time = 0  # 记录当前第几轮通信
-
     # 一个迭代回合代表一次全局通信
     while True:
         select_clients = random.sample(list(range(client_num)), select_num)
@@ -91,23 +75,29 @@ if __name__ == '__main__':
         for i, j in enumerate(select_clients):
             print("the select client num is {}".format(j))
             clients.set_model(model)
-
-            clients.train(j, communication_time)
-
+            clients.train(j)
             local_model_gra = clients.get_model_gradient(j, args)  # 客户端的时间,同时包括上传\重传请求
-
             model_gra += 1 / select_num * local_model_gra
 
-        idx = 0
+        nonzero_indices = model_gra.nonzero()
+        if communication_time != 0:
+            comment_num = np.intersect1d(nonzero_indices.numpy(), last_indices.numpy())
+            print("the number of comment elements is ", len(comment_num))
+            print("the proportion of last and current is ", len(comment_num) / last_indices.numel(), 
+                  len(comment_num) / nonzero_indices.numel())
+            
+        last_indices = torch.zeros(nonzero_indices.numel())
+        last_indices = nonzero_indices.clone()
 
+
+        idx = 0
         new_model = model.state_dict()
         for p in new_model:
-            # for p in model.parameters():
+        # for p in model.parameters():
             if p.find("num_batches_tracked") != -1:
                 continue
             size = new_model[p].numel()
-            new_model[p].data = new_model[p].data - model_gra[idx:idx + size].reshape(
-                new_model[p].shape).data
+            new_model[p].data = new_model[p].data - model_gra[idx:idx + size].reshape(new_model[p].shape).data
             # size = p.numel()
             # p.data = p.data - model_gra[idx:idx + size].reshape(
             #     p.shape).data
@@ -117,7 +107,7 @@ if __name__ == '__main__':
         communication_time += 1
         print("Communication Time is ", communication_time)
 
-        if communication_time % interval == 0:
+        if communication_time % 1 == 0:
             acc = 0
             total_loss = 0.
             correct = 0.
@@ -130,7 +120,6 @@ if __name__ == '__main__':
                 for (data, target) in test_loader:
                     data = data.to(device)
                     target = target.to(device)
-
                     output = model(data)
                     total_loss += loss_fn(output, target)
                     pred = output.argmax(dim=1)
