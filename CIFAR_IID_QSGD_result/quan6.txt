@@ -1,0 +1,16 @@
+Test loss: 2.253751277923584, Accuracy: 16.74
+Test loss: 1.7048115730285645, Accuracy: 31.540000000000003
+Test loss: 1.5276545286178589, Accuracy: 42.809999999999995
+Test loss: 1.4086636304855347, Accuracy: 48.75
+Test loss: 1.4962997436523438, Accuracy: 48.51
+Test loss: nan, Accuracy: 10.0
+Test loss: nan, Accuracy: 10.0
+Test loss: 1.3487048149108887, Accuracy: 52.33
+Test loss: 1.299065113067627, Accuracy: 53.18000000000001
+Test loss: nan, Accuracy: 10.0
+Test loss: nan, Accuracy: 10.0
+Test loss: nan, Accuracy: 10.0
+Test loss: nan, Accuracy: 10.0
+Test loss: nan, Accuracy: 10.0
+Test loss: nan, Accuracy: 10.0
+Test loss: nan, Accuracy: 10.0
