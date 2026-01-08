@@ -1,5 +1,3 @@
-lr和batch_size越小越好？
-
 rm -rf CIFAR/*PQ*
 nohup python -u Server.py --dataset CIFAR-10 --iid IID --quan PQ > CIFAR/IID_PQ.out 2>&1 &
 nohup python -u Server.py --dataset CIFAR-10 --iid NIID --quan PQ > CIFAR/NIID_PQ.out 2>&1 &
