@@ -29,7 +29,7 @@ device = torch.device("cuda:3" if torch.cuda.is_available() else "cpu")
 
 client_num = 100
 select_num = 10
-batch_size = 20
+batch_size = 50
 
 transform_test = transforms.Compose([
     transforms.ToTensor(),
@@ -46,9 +46,10 @@ if __name__ == '__main__':
     parse.add_argument('--comp', type=str, default="topk")
     parse.add_argument('--fit', type=int, default=1)
     args = parse.parse_args()
+    args.batch_size = batch_size
     
-    tmp_model = m.Net()
-    model = m.Net() 
+    tmp_model = m.ResNet18()
+    model = m.ResNet18() 
     test_loader = torch.utils.data.DataLoader(
         datasets.CIFAR10('../../CIFAR-10', train=False, download=True,
                        transform=transform_test),

@@ -44,9 +44,9 @@ class Client():
         self.train_loader = []
 
         self.lr = 0.1
-        self.batch_size = 50
-        self.model = m.Net()  # m.ResNet(m.ResidualBlock)
-        self.last_model = m.Net()
+        self.batch_size = args.batch_size
+        self.model = m.ResNet18()  # m.ResNet(m.ResidualBlock)
+        self.last_model = m.ResNet18()
         train_data = datasets.CIFAR10('../../CIFAR-10', train=True, download=True,
                                     transform=transform_train)
         print(range(len(train_data)))
@@ -117,7 +117,7 @@ class Client():
         self.model = self.model.to(device)
         loss_fn = torch.nn.CrossEntropyLoss().to(device)
         print("learning rate is ", self.lr)
-        optimizer = torch.optim.SGD(params=self.model.parameters(), lr=self.lr, momentum=0.9)
+        optimizer = torch.optim.SGD(params=self.model.parameters(), lr=self.lr)
         for epo in range(epoch_num):
             self.model.train()
             for i, (data, label) in enumerate(self.train_loader[idx]):
@@ -129,6 +129,5 @@ class Client():
                 loss.backward()
                 optimizer.step()
                 if i % 100 == 0:
-                    print("Train Epoch: {}, iteration: {}, Loss: {}".format
-                          (epo, i, loss.item()))
+                    print("Train Epoch: {}, iteration: {}, Loss: {}".format(epo, i, loss.item()))
         self.model = self.model.to('cpu')

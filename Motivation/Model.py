@@ -229,11 +229,11 @@ class Net(nn.Module):
             nn.Linear(in_features=1024, out_features=256),
             # nn.BatchNorm1d(256),
             nn.ReLU(inplace=True),
-            nn.Dropout(0.5),
+            # nn.Dropout(0.5),
             nn.Linear(in_features=256, out_features=64),
             # nn.BatchNorm1d(64),
             nn.ReLU(inplace=True),
-            nn.Dropout(0.5),
+            # nn.Dropout(0.5),
             nn.Linear(in_features=64, out_features=10)
         )
 
@@ -303,7 +303,7 @@ class ResidualBlock(nn.Module):
 
 
 class ResNet(nn.Module):
-    def __init__(self, ResidualBlock, num_classes=100):
+    def __init__(self, ResidualBlock, num_classes=10):
         super(ResNet, self).__init__()
         self.inchannel = 64
         self.conv1 = nn.Sequential(
