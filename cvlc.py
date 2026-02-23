@@ -38,7 +38,7 @@ class Fed_cvlc(object):
 
     def do_compress(self, grad: torch.tensor, param: torch.tensor, name_grad, name_param, proportion, rnd):
         method = self.args.method
-        if method == 'raw':
+        if method == 'raw' or method == 'new1':
             return grad
         elif method == 'cvlc':
             self.d = self.trainable_parameters

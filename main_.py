@@ -63,6 +63,7 @@ def args_parser():
     parser.add_argument('--proporA', type=float, default=0.4, help='')
     parser.add_argument('--proporB', type=float, default=0.05, help='')
     parser.add_argument('--proportion', type=float, default=0.02, help='')
+    parser.add_argument('--update_proportion', type=float, default=0.9, help='')
     parser.add_argument('--optimize', type=int, default=0, help='')
     parser.add_argument('--point', type=int, default=2, help='')
     parser.add_argument('--quan', type=int, default=0, help='')

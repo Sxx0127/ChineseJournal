@@ -5,7 +5,7 @@ import torch
 import numpy as np
 import math
 import time
-from model_utils import get_model_path, get_automodel, get_untrain_part, set_requires_grad
+from model_utils import get_model_path, get_automodel, get_untrain_part, set_requires_grad, safe_replace_lora_layers
 from torch import nn
 from torch.nn.utils import prune
 
@@ -62,6 +62,7 @@ class Fed_trainer(object):
         # if self.args.method == 'raw':
         #     file_path = 'gradient/' + self.args.model + '_' + str(self.communication) + '.pt'
         #     torch.save(name_grad, file_path)
+        print("the proportion of zeros in gradients is ", torch.sum(grad < 1e-5) / grad.numel())
         return grad, param, name_grad, name_param, name_paramlast
 
     def paramAggre(self, grad, gobal_model=None):
@@ -211,15 +212,19 @@ class Fed_trainer(object):
                 self.target_modules = ["q_proj", "v_proj"]
         self.gobal_model, trainable_parameters, self.untrain_part = get_model_lora(model=self.args.model, lora_alpha=self.args.lora_alpha,
                                                                 lora_rank=self.args.lora_rank, num_labels=num_labels,
-                                                                task=task)
+                                                                task=task, method=self.args.method)
         print("the model architecture is ")
         print(self.gobal_model)
 
         num_param = 0
+        print(self.untrain_part)
+        print("the name of update layers are")
         for layer in self.gobal_model.state_dict():
             if layer.find("num_batches_tracked") != -1:
                 continue
+            # if 'lora' in layer or any(part in layer for part in self.untrain_part):
             if 'lora' in layer:
+                print(layer)
                 num_param += self.gobal_model.state_dict()[layer].numel()
         self.accu_gra = torch.zeros((self.args.num_client, num_param))
         self.set_data_collator(tokenizer=tokenizer, task=task)
@@ -255,9 +260,21 @@ class Fed_trainer(object):
                         local_model = self.combine(residual_model[client], copy.deepcopy(local_model))
                 local_model = self.train(data=data, data_indices=partition_map[client],
                                         model=copy.deepcopy(local_model),
-                                        tokenizer=tokenizer, task=task, round=rnd)
-                if rnd == 0 and client == cohorts[0]:
-                    self.copy_model_expect_lora(local_model)
+                                        tokenizer=tokenizer, task=task, client_idx=i,
+                                        update_proportion=self.args.update_proportion)
+                # for layer in local_model.state_dict():
+                #     if 'lora_B' in layer:
+                #         row_sums = torch.sum(torch.abs(local_model.state_dict()[layer]), dim=1)  
+                #         is_zero_row = torch.eq(row_sums, 0.0)
+                #         zero_row_count = torch.sum(is_zero_row).item()  # item()转为Python整数
+                #         print("the count of zero rows is ", zero_row_count)
+                #     elif 'lora_A' in layer:
+                #         column_sums = torch.sum(torch.abs(local_model.state_dict()[layer]), dim=0)  
+                #         is_zero_column = torch.eq(column_sums, 0.0)
+                #         zero_column_count = torch.sum(is_zero_column).item()  # item()转为Python整数
+                #         print("the count of zero column is ", zero_column_count)
+                # if rnd == 0 and client == cohorts[0]:
+                #     self.copy_model_expect_lora(local_model)
                 grad, param, name_grad, name_param, name_paramlast = self.get_grad(local_model)
                 if self.args.method in ['fedcomp', 'smartidx']:
                     fedcomp = Fedcomp(args=self.args)
@@ -338,20 +355,23 @@ class Fed_trainer(object):
         #         file.write(str(item) + '\n')
         return
 
-    def train(self, data, data_indices, model, tokenizer, task, round):
+    def train(self, data, data_indices, model, tokenizer, task, client_idx, update_proportion):
         if self.args.method == 'prune':
             for name, module in model.named_modules():
                 if isinstance(module, nn.Linear) and 'lora' in name:
                     tmp_mask = self.name_mask[name]
                     prune.CustomFromMask.apply(module, 'weight', tmp_mask)
         
+        if self.args.method == 'new1':
+            model = safe_replace_lora_layers(model, client_idx, update_proportion)
         model.train()
         train_data = Subset(data["train"], data_indices)
         save_steps = sys.maxsize
         # optimizer = torch.optim.Adam(model.parameters(), lr=self.args.lr)
         lr = self.args.lr
         weight = self.args.weight
-        optimizer = torch.optim.Adam(model.parameters(), lr=self.args.lr, weight_decay=weight, betas=(0.9, 0.999), amsgrad=True)
+        # optimizer = torch.optim.Adam(model.parameters(), lr=self.args.lr, weight_decay=weight, betas=(0.9, 0.999), amsgrad=True)
+        optimizer = torch.optim.AdamW(model.parameters(), lr=self.args.lr)
         if task in [Task.SequenceClassification, Task.TokenClassification, Task.QuestionAnswering, Task.CausalLM]:
             training_args = TrainingArguments(output_dir='./save/model', save_steps=save_steps,
                                             #   save_strategy='epoch',

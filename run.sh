@@ -1,4 +1,11 @@
-nohup python -u main_.py --label --partition --model distilbert-base-cased --method raw --GPU 0 --lr 1e-3 --max_length 128 --batch_size 16 --comm_round 20 > result/distilbert_20news_iid_raw.out 2>&1 &
+nohup python -u main_.py --label --partition --model distilbert-base-multilingual-cased --method raw --GPU 0 --lr 1e-3 --max_length 256 --batch_size 16 --comm_round 100 > result/distilbert_20news_iid_raw1.out 2>&1 &
+nohup python -u main_.py --label --partition --model distilbert-base-multilingual-cased --method new1 --GPU 0 --lr 1e-3 --max_length 256 --batch_size 16 --comm_round 100 > result/distilbert_20news_iid_new.out 2>&1 &
+nohup python -u main_.py --label --partition --update_proportion 0.5 --model distilbert-base-multilingual-cased --method new1 --GPU 1 --lr 1e-3 --max_length 256 --batch_size 16 --comm_round 100 > result/distilbert_20news_iid_new5.out 2>&1 &
+nohup python -u main_.py --label --partition --update_proportion 0.6 --model distilbert-base-multilingual-cased --method new1 --GPU 2 --lr 1e-3 --max_length 256 --batch_size 16 --comm_round 100 > result/distilbert_20news_iid_new6.out 2>&1 &
+nohup python -u main_.py --label --partition --update_proportion 0.7 --model distilbert-base-multilingual-cased --method new1 --GPU 3 --lr 1e-3 --max_length 256 --batch_size 16 --comm_round 100 > result/distilbert_20news_iid_new7.out 2>&1 &
+nohup python -u main_.py --label --partition --update_proportion 0.8 --model distilbert-base-multilingual-cased --method new1 --GPU 4 --lr 1e-3 --max_length 256 --batch_size 16 --comm_round 100 > result/distilbert_20news_iid_new8.out 2>&1 &
+nohup python -u main_.py --label --partition --update_proportion 0.9 --model distilbert-base-multilingual-cased --method new1 --GPU 5 --lr 1e-3 --max_length 256 --batch_size 16 --comm_round 100 > result/distilbert_20news_iid_new9.out 2>&1 &
+nohup python -u main_.py --label --partition --model distilbert-base-multilingual-cased --method block_opt --GPU 1 --lr 1e-3 --max_length 256 --batch_size 16 --comm_round 100 > result/distilbert_20news_iid_block.out 2>&1 &
 
 
 nohup python -u main_.py --label --partition --model llama-3.2-1B --method compeft --GPU 0 --lr 1e-3 --max_length 128 --batch_size 16 --comm_round 20 > result/3llama_20news_iid_compeft.out 2>&1 &
