@@ -59,9 +59,6 @@ class Fed_trainer(object):
                 name_grad[layer] = param_g
                 name_param[layer] = param_now
                 name_paramlast[layer] = param_last
-        # if self.args.method == 'raw':
-        #     file_path = 'gradient/' + self.args.model + '_' + str(self.communication) + '.pt'
-        #     torch.save(name_grad, file_path)
         print("the proportion of zeros in gradients is ", torch.sum(grad < 1e-5) / grad.numel())
         return grad, param, name_grad, name_param, name_paramlast
 
@@ -334,6 +331,16 @@ class Fed_trainer(object):
                 self.gobal_model = self.combine(grad)
             result, predictions = self.test_metric(data=data, tokenizer=tokenizer,
                                                 validation_key=validation_key, task=task)
+            
+            
+            if self.args.method == 'raw':
+                name_model = {}
+                for layer in self.gobal_model.state_dict():
+                    if 'lora' in layer:
+                        name_model[layer] = self.gobal_model.state_dict()[layer].detach().cpu()
+                file_path = 'para/' + self.args.model + '_' + str(rnd) + '.pt'
+                torch.save(name_model, file_path)
+        
             if predictions is not None:
                 result = self.metric_trainer.compute_metrics_predictions(predictions=predictions, data=data,
                                                                         result=result,

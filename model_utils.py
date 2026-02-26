@@ -68,15 +68,15 @@ class CustomLoRALinear(nn.Linear):
 def safe_replace_lora_layers(peft_model, client_idx, proportion):
     with torch.no_grad():
         for name, module in peft_model.named_modules():
-            if hasattr(module, 'lora_B') and module.lora_B is not None:
-                lora_B_weight = module.lora_B['default'].weight
+            if hasattr(module, 'lora_A') and module.lora_A is not None:
+                lora_B_weight = module.lora_A['default'].weight
                 row_num = lora_B_weight.shape[0]
                 # start_idx = client_idx * int(row_num / 10)
                 # end_idx = (client_idx + 1) * int(row_num / 10)
                 # if client_idx == 9:
                 #     end_idx = row_num
                 # frozen_row_index = list(range(start_idx)) + list(range(end_idx,row_num))
-                frozen_row_index = random.sample(list(range(row_num)), int(row_num * proportion))
+                frozen_row_index = random.sample(list(range(row_num)), math.ceil(row_num * proportion))
                 # lora_B_weight.data[frozen_row_index, :] = 0
                 print(f"Froze row {frozen_row_index} of {name}.lora_B")
                 def make_hook(row_idx):
@@ -86,15 +86,15 @@ def safe_replace_lora_layers(peft_model, client_idx, proportion):
                         return grad
                     return hook
                 lora_B_weight.register_hook(make_hook(frozen_row_index))
-            if hasattr(module, 'lora_A') and module.lora_A is not None:
-                lora_A_weight = module.lora_A['default'].weight
+            if hasattr(module, 'lora_B') and module.lora_B is not None:
+                lora_A_weight = module.lora_B['default'].weight
                 column_num = lora_A_weight.shape[1]
                 # start_idx = client_idx * int(column_num / 10)
                 # end_idx = (client_idx + 1) * int(column_num / 10)
                 # if client_idx == 9:
                 #     end_idx = column_num
                 # frozen_column_index = list(range(start_idx)) + list(range(end_idx,column_num))
-                frozen_column_index = random.sample(list(range(column_num)), int(column_num * proportion))
+                frozen_column_index = random.sample(list(range(column_num)), math.ceil(column_num * proportion))
                 # lora_A_weight.data[:, frozen_column_index] = 0
                 print(f"Froze column {frozen_column_index} of {name}.lora_A")
                 def make_hook(column_idx):
